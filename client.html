@@ -249,7 +249,7 @@
             <div class="file-info" id="fileInfo"></div>
         </div>
 
-        <div class="loading" id="loading">
+        <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
             <p>Elaborazione in corso...</p>
         </div>
@@ -262,8 +262,6 @@
         const uploadBtn = document.getElementById('uploadBtn');
         const fileInfo = document.getElementById('fileInfo');
         const uploadForm = document.getElementById('uploadForm');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
 
         // Gestione selezione file
         fileInput.addEventListener('change', function(e) {
@@ -277,190 +275,8 @@
             }
         });
 
-        // Gestione submit del form
-        uploadForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const file = fileInput.files[0];
-            if (!file) {
-                showError('Seleziona un file prima di procedere.');
-                return;
-            }
-
-            // Mostra loading
-            loading.style.display = 'block';
-            results.innerHTML = '';
-            uploadBtn.disabled = true;
-
-            // Crea un form temporaneo per l'invio
-            const tempForm = document.createElement('form');
-            tempForm.method = 'POST';
-            tempForm.action = 'server.php';
-            tempForm.enctype = 'multipart/form-data';
-            tempForm.style.display = 'none';
-
-            // Clona l'input file
-            const clonedFileInput = fileInput.cloneNode(true);
-            tempForm.appendChild(clonedFileInput);
-
-            // Aggiungi il form al body e invialo
-            document.body.appendChild(tempForm);
-            
-            // Gestisci la risposta usando iframe nascosto
-            handleFormSubmission(tempForm);
-        });
-
-        function handleFormSubmission(form) {
-            // Crea un iframe nascosto per gestire la risposta
-            const iframe = document.createElement('iframe');
-            iframe.name = 'upload-response';
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-
-            // Imposta il target del form sull'iframe
-            form.target = 'upload-response';
-
-            // Gestisci il caricamento dell'iframe
-            iframe.onload = function() {
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    const responseText = iframeDoc.body.innerHTML;
-                    
-                    // Prova a parsare la risposta JSON
-                    let data;
-                    try {
-                        // Rimuovi eventuali tag HTML dalla risposta
-                        const cleanResponse = responseText.replace(/<[^>]*>/g, '').trim();
-                        data = JSON.parse(cleanResponse);
-                    } catch (parseError) {
-                        // Se non è JSON valido, prova a estrarre il JSON dal contenuto
-                        const jsonMatch = responseText.match(/\{.*\}/);
-                        if (jsonMatch) {
-                            data = JSON.parse(jsonMatch[0]);
-                        } else {
-                            throw new Error('Risposta del server non valida');
-                        }
-                    }
-
-                    loading.style.display = 'none';
-                    uploadBtn.disabled = false;
-                    
-                    if (data.success) {
-                        displayResults(data.students);
-                        showSuccess(`File elaborato con successo! Trovati ${data.students.length} studenti.`);
-                    } else {
-                        showError(data.error || 'Errore durante l\'elaborazione del file.');
-                    }
-
-                } catch (error) {
-                    loading.style.display = 'none';
-                    uploadBtn.disabled = false;
-                    showError(`Errore nella lettura della risposta: ${error.message}`);
-                    console.error('Errore:', error);
-                }
-
-                // Pulisci gli elementi temporanei
-                document.body.removeChild(form);
-                document.body.removeChild(iframe);
-            };
-
-            // Invia il form
-            form.submit();
-        }
-
-        function displayResults(students) {
-            if (students.length === 0) {
-                results.innerHTML = '<div class="error">Nessun dato valido trovato nel file.</div>';
-                return;
-            }
-
-            let tableHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>👤 Cognome</th>
-                            <th>📝 Nome</th>
-                            <th>🏫 Classe</th>
-                            <th>🏛️ Scuola</th>
-                            <th>📅 Data di Nascita</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            students.forEach((student, index) => {
-                tableHTML += `
-                    <tr style="animation: fadeIn 0.5s ease ${index * 0.1}s both;">
-                        <td>${escapeHtml(student.cognome)}</td>
-                        <td>${escapeHtml(student.nome)}</td>
-                        <td>${escapeHtml(student.classe)}</td>
-                        <td>${escapeHtml(student.scuola)}</td>
-                        <td>${escapeHtml(student.data_nascita)}</td>
-                    </tr>
-                `;
-            });
-
-            tableHTML += `
-                    </tbody>
-                </table>
-            `;
-
-            results.innerHTML = tableHTML;
-
-            // Aggiungi animazione CSS
-            if (!document.querySelector('#fadeInStyle')) {
-                const style = document.createElement('style');
-                style.id = 'fadeInStyle';
-                style.textContent = `
-                    @keyframes fadeIn {
-                        from {
-                            opacity: 0;
-                            transform: translateY(20px);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-        }
-
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.innerHTML = `❌ ${message}`;
-            results.innerHTML = '';
-            results.appendChild(errorDiv);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success';
-            successDiv.innerHTML = `✅ ${message}`;
-            results.insertBefore(successDiv, results.firstChild);
-        }
-
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
-
-        // Gestisci parametri URL per mostrare risultati al caricamento della pagina
-        window.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('uploaded')) {
-                // Se c'è il parametro uploaded, significa che siamo tornati da un upload
-                // Potresti voler gestire questo caso se necessario
-            }
-        });
+        // Il form verrà inviato normalmente al server
+        // Il server restituirà una nuova pagina HTML con i risultati
     </script>
 </body>
 </html>
