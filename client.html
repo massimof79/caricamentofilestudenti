@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Studenti</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-input-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        .upload-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+
+        tr:hover td {
+            background-color: #f8f9ff;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .success {
+            background: linear-gradient(135deg, #51cf66, #40c057);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .file-info {
+            color: white;
+            margin: 10px 0;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Gestione Studenti</h1>
+        
+        <div class="upload-section">
+            <h3 style="color: white; margin-bottom: 15px; position: relative; z-index: 1;">Carica File Studenti</h3>
+            <p style="color: rgba(255,255,255,0.9); margin-bottom: 20px; position: relative; z-index: 1;">
+                Formato richiesto: cognome, nome, classe, scuola, data di nascita (una riga per studente)
+            </p>
+            
+            <form id="uploadForm" action="server.php" method="POST" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" name="file" accept=".txt" required />
+                    <div class="file-input-button">
+                        📁 Scegli File
+                    </div>
+                </div>
+                
+                <button type="submit" class="upload-btn" id="uploadBtn" disabled>
+                    🚀 Carica e Visualizza
+                </button>
+            </form>
+            
+            <div class="file-info" id="fileInfo"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Elaborazione in corso...</p>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadForm = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        // Gestione selezione file
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                fileInfo.innerHTML = `File selezionato: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(2)} KB)`;
+                uploadBtn.disabled = false;
+            } else {
+                fileInfo.innerHTML = '';
+                uploadBtn.disabled = true;
+            }
+        });
+
+        // Gestione submit del form
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                showError('Seleziona un file prima di procedere.');
+                return;
+            }
+
+            // Mostra loading
+            loading.style.display = 'block';
+            results.innerHTML = '';
+            uploadBtn.disabled = true;
+
+            // Crea un form temporaneo per l'invio
+            const tempForm = document.createElement('form');
+            tempForm.method = 'POST';
+            tempForm.action = 'server.php';
+            tempForm.enctype = 'multipart/form-data';
+            tempForm.style.display = 'none';
+
+            // Clona l'input file
+            const clonedFileInput = fileInput.cloneNode(true);
+            tempForm.appendChild(clonedFileInput);
+
+            // Aggiungi il form al body e invialo
+            document.body.appendChild(tempForm);
+            
+            // Gestisci la risposta usando iframe nascosto
+            handleFormSubmission(tempForm);
+        });
+
+        function handleFormSubmission(form) {
+            // Crea un iframe nascosto per gestire la risposta
+            const iframe = document.createElement('iframe');
+            iframe.name = 'upload-response';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            // Imposta il target del form sull'iframe
+            form.target = 'upload-response';
+
+            // Gestisci il caricamento dell'iframe
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const responseText = iframeDoc.body.innerHTML;
+                    
+                    // Prova a parsare la risposta JSON
+                    let data;
+                    try {
+                        // Rimuovi eventuali tag HTML dalla risposta
+                        const cleanResponse = responseText.replace(/<[^>]*>/g, '').trim();
+                        data = JSON.parse(cleanResponse);
+                    } catch (parseError) {
+                        // Se non è JSON valido, prova a estrarre il JSON dal contenuto
+                        const jsonMatch = responseText.match(/\{.*\}/);
+                        if (jsonMatch) {
+                            data = JSON.parse(jsonMatch[0]);
+                        } else {
+                            throw new Error('Risposta del server non valida');
+                        }
+                    }
+
+                    loading.style.display = 'none';
+                    uploadBtn.disabled = false;
+                    
+                    if (data.success) {
+                        displayResults(data.students);
+                        showSuccess(`File elaborato con successo! Trovati ${data.students.length} studenti.`);
+                    } else {
+                        showError(data.error || 'Errore durante l\'elaborazione del file.');
+                    }
+
+                } catch (error) {
+                    loading.style.display = 'none';
+                    uploadBtn.disabled = false;
+                    showError(`Errore nella lettura della risposta: ${error.message}`);
+                    console.error('Errore:', error);
+                }
+
+                // Pulisci gli elementi temporanei
+                document.body.removeChild(form);
+                document.body.removeChild(iframe);
+            };
+
+            // Invia il form
+            form.submit();
+        }
+
+        function displayResults(students) {
+            if (students.length === 0) {
+                results.innerHTML = '<div class="error">Nessun dato valido trovato nel file.</div>';
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>👤 Cognome</th>
+                            <th>📝 Nome</th>
+                            <th>🏫 Classe</th>
+                            <th>🏛️ Scuola</th>
+                            <th>📅 Data di Nascita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            students.forEach((student, index) => {
+                tableHTML += `
+                    <tr style="animation: fadeIn 0.5s ease ${index * 0.1}s both;">
+                        <td>${escapeHtml(student.cognome)}</td>
+                        <td>${escapeHtml(student.nome)}</td>
+                        <td>${escapeHtml(student.classe)}</td>
+                        <td>${escapeHtml(student.scuola)}</td>
+                        <td>${escapeHtml(student.data_nascita)}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            results.innerHTML = tableHTML;
+
+            // Aggiungi animazione CSS
+            if (!document.querySelector('#fadeInStyle')) {
+                const style = document.createElement('style');
+                style.id = 'fadeInStyle';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from {
+                            opacity: 0;
+                            transform: translateY(20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.innerHTML = `❌ ${message}`;
+            results.innerHTML = '';
+            results.appendChild(errorDiv);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.innerHTML = `✅ ${message}`;
+            results.insertBefore(successDiv, results.firstChild);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Gestisci parametri URL per mostrare risultati al caricamento della pagina
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('uploaded')) {
+                // Se c'è il parametro uploaded, significa che siamo tornati da un upload
+                // Potresti voler gestire questo caso se necessario
+            }
+        });
+    </script>
+</body>
+</html>
