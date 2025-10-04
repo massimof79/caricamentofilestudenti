@@ -64,64 +64,19 @@ function getColoreVoto($voto) {
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
+            margin: 20px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
-        th {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px;
-            text-align: left;
-        }
-        td {
+        th, td {
             padding: 10px;
-            border-bottom: 1px solid #ddd;
+            border: 1px solid #ddd;
         }
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-        .voto {
-            font-weight: bold;
-            font-size: 18px;
-            text-align: center;
-        }
-        .green {
-            color: green;
-        }
-        .red {
-            color: red;
-        }
-        .orange {
-            color: orange;
-        }
-        .back-button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-        .back-button:hover {
-            background-color: #45a049;
-        }
-        .stats {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-        }
+        .green { color: green; }
+        .red { color: red; }
+        .orange { color: orange; }
     </style>
 </head>
 <body>
@@ -129,58 +84,52 @@ function getColoreVoto($voto) {
     
     <?php if (count($studenti) > 0): ?>
         <table>
-            <thead>
-                <tr>
-                    <th>N°</th>
-                    <th>Nome</th>
-                    <th>Cognome</th>
-                    <th>Voto</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php 
-                $numero = 1;
-                $totale_voti = 0;
-                $promossi = 0;
-                $bocciati = 0;
+            <tr>
+                <th>N°</th>
+                <th>Nome</th>
+                <th>Cognome</th>
+                <th>Voto</th>
+            </tr>
+            <?php 
+            $numero = 1;
+            $totale_voti = 0;
+            $promossi = 0;
+            $bocciati = 0;
+            
+            foreach ($studenti as $studente): 
+                $colore = getColoreVoto($studente['voto']);
+                $totale_voti += $studente['voto'];
                 
-                foreach ($studenti as $studente): 
-                    $colore = getColoreVoto($studente['voto']);
-                    $totale_voti += $studente['voto'];
-                    
-                    if ($studente['voto'] >= 6) {
-                        $promossi++;
-                    } else {
-                        $bocciati++;
-                    }
-                ?>
-                    <tr>
-                        <td><?php echo $numero; ?></td>
-                        <td><?php echo htmlspecialchars($studente['nome']); ?></td>
-                        <td><?php echo htmlspecialchars($studente['cognome']); ?></td>
-                        <td class="voto <?php echo $colore; ?>">
-                            <?php echo $studente['voto']; ?>
-                        </td>
-                    </tr>
-                <?php 
-                    $numero++;
-                endforeach; 
-                ?>
-            </tbody>
+                if ($studente['voto'] >= 6) {
+                    $promossi++;
+                } else {
+                    $bocciati++;
+                }
+            ?>
+                <tr>
+                    <td><?php echo $numero; ?></td>
+                    <td><?php echo htmlspecialchars($studente['nome']); ?></td>
+                    <td><?php echo htmlspecialchars($studente['cognome']); ?></td>
+                    <td class="<?php echo $colore; ?>">
+                        <?php echo $studente['voto']; ?>
+                    </td>
+                </tr>
+            <?php 
+                $numero++;
+            endforeach; 
+            ?>
         </table>
         
-        <div class="stats">
-            <h3>Statistiche</h3>
-            <p><strong>Totale studenti:</strong> <?php echo count($studenti); ?></p>
-            <p><strong>Media voti:</strong> <?php echo number_format($totale_voti / count($studenti), 2); ?></p>
-            <p><strong>Promossi (voto >= 6):</strong> <span class="green"><?php echo $promossi; ?></span></p>
-            <p><strong>Non sufficienti (voto < 6):</strong> <span class="red"><?php echo $bocciati; ?></span></p>
-        </div>
+        <h3>Statistiche</h3>
+        <p>Totale studenti: <?php echo count($studenti); ?></p>
+        <p>Media voti: <?php echo number_format($totale_voti / count($studenti), 2); ?></p>
+        <p>Promossi (voto >= 6): <span class="green"><?php echo $promossi; ?></span></p>
+        <p>Non sufficienti (voto < 6): <span class="red"><?php echo $bocciati; ?></span></p>
         
     <?php else: ?>
-        <p style="color: red; text-align: center;">Nessun dato valido trovato nel file!</p>
+        <p style="color: red;">Nessun dato valido trovato nel file!</p>
     <?php endif; ?>
     
-    <a href="index.html" class="back-button">← Torna indietro</a>
+    <p><a href="index.html">← Torna indietro</a></p>
 </body>
 </html>
